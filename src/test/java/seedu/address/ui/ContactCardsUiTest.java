@@ -1307,7 +1307,7 @@ public class ContactCardsUiTest {
                     stage.setWidth(size[0]);
                     stage.setHeight(size[1]);
                 });
-                waitForLayout(scene);
+                waitForStableLayout(scene);
                 runOnFxThread(() -> {
                     Region root = (Region) scene.getRoot();
                     saveSnapshot(root, "live-resize-" + size[0] + "x" + size[1]);
@@ -1552,6 +1552,27 @@ public class ContactCardsUiTest {
         } finally {
             runOnFxThread(() -> scene.removePostLayoutPulseListener(listener));
         }
+    }
+
+    /**
+     * Waits until the scene size stops changing, then allows one more layout pass.
+     * Some window systems, such as Xvfb on Linux, apply a stage resize over several pulses, and the list
+     * restores the selected row in a later event, so a fixed number of pulses can check stale cells.
+     *
+     * @param scene Scene whose window was just resized.
+     * @throws Exception If JavaFX execution or layout synchronization fails.
+     */
+    private static void waitForStableLayout(Scene scene) throws Exception {
+        double[] previousSize = {-1, -1};
+        for (int attempt = 0; attempt < 20; attempt++) {
+            waitForLayout(scene);
+            double[] size = callOnFxThread(() -> new double[] {scene.getWidth(), scene.getHeight()});
+            if (size[0] == previousSize[0] && size[1] == previousSize[1]) {
+                break;
+            }
+            previousSize = size;
+        }
+        waitForLayout(scene);
     }
 
     /**
