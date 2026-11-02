@@ -12,6 +12,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.skin.ListViewSkin;
+import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -81,7 +82,7 @@ public class PersonListPanel extends UiPart<Region> {
                 Platform.runLater(() -> {
                     personListView.setSkin(new ListViewSkin<>(personListView));
                     personListView.layout();
-                    state.getSelectedContact().ifPresent(personListView::scrollTo);
+                    state.getSelectedContact().ifPresent(this::revealContact);
                 });
             }
         });
@@ -148,6 +149,19 @@ public class PersonListPanel extends UiPart<Region> {
             detailPanel.showContact(contact, displayedIndex, linkedPersonsLookup.apply(contact));
         } else {
             detailPanel.clear(count == 0);
+        }
+    }
+
+    /**
+     * Scrolls the list so that the given contact's row is visible.
+     * {@code ListView#scrollTo} positions rows using estimated heights, which can leave a tall wrapped row just
+     * outside the viewport, so the list's flow then adjusts the position using the row's real height.
+     */
+    private void revealContact(Person contact) {
+        personListView.scrollTo(contact);
+        personListView.layout();
+        if (personListView.lookup(".virtual-flow") instanceof VirtualFlow<?> flow) {
+            flow.scrollTo(personListView.getItems().indexOf(contact));
         }
     }
 
