@@ -12,7 +12,6 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.skin.ListViewSkin;
-import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -153,15 +152,14 @@ public class PersonListPanel extends UiPart<Region> {
     }
 
     /**
-     * Scrolls the list so that the given contact's row is visible.
-     * {@code ListView#scrollTo} positions rows using estimated heights, which can leave a tall wrapped row just
-     * outside the viewport, so the list's flow then adjusts the position using the row's real height.
+     * Scrolls the list to the given contact's row.
+     * The list estimates the heights of rows it has not laid out yet, so each layout pass measures more wrapped
+     * rows and corrects the position; repeating a few times lets a tall row settle inside the viewport.
      */
     private void revealContact(Person contact) {
-        personListView.scrollTo(contact);
-        personListView.layout();
-        if (personListView.lookup(".virtual-flow") instanceof VirtualFlow<?> flow) {
-            flow.scrollTo(personListView.getItems().indexOf(contact));
+        for (int pass = 0; pass < 3; pass++) {
+            personListView.scrollTo(contact);
+            personListView.layout();
         }
     }
 
